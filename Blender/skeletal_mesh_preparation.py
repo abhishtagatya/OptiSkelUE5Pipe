@@ -112,7 +112,7 @@ class SkeletalMeshPreparation:
         """
         prefixes = bone_name.split("_")
         if len(prefixes) > 1:
-            bone_name = prefixes[1]
+            bone_name = prefixes[-1]
 
         for key, value in SKP_CHAIN_MATERIAL.items():
             if any(bone_name.startswith(core_name) for core_name in value["bones"]):
@@ -160,7 +160,7 @@ class SkeletalMeshPreparation:
         """
         prefixes = part_name.split("_")
         if len(prefixes) > 1:
-            return prefixes[1]
+            return prefixes[-1]
         return part_name
 
     def place_mesh_armature_bone_tip(self, selected_armature):
@@ -170,7 +170,7 @@ class SkeletalMeshPreparation:
 
         # Check that Object is an Armature
         if selected_armature is None or selected_armature.type != "ARMATURE":
-            print(PROGRAM_NAME + ": " + f"Couldn't find an Armature named {selected_armature_name}.")
+            print(PROGRAM_NAME + ": " + f"Couldn't find an Armature named {selected_armature.data.name}.")
             return
         
         # Set to Object Mode
@@ -239,7 +239,7 @@ class SkeletalMeshPreparation:
             
             bpy.ops.constraint.apply(constraint=pobj_contraint.name, owner="OBJECT")
             
-            print(PROGRAM_NAME + f": Created P_{bone_name} attached to {bone_name} of {selected_armature}.")
+            print(PROGRAM_NAME + f": Created P_{bone_name} attached to {bone_name} of {selected_armature.name}.")
     
     def run(self, selected_armature):
         """
