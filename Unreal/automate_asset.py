@@ -110,6 +110,12 @@ def auto_skm_to_ikr(skm, fpathext="Rigs"):
     unreal.EditorAssetLibrary.save_asset(ikr.get_path_name())
     return ikr
 
+def create_pin_bone_item(bone_to, bone_from):
+    pbd = unreal.PinBoneData()
+    pbd.set_editor_property("bone_to_pin", bone_to)
+    pbd.set_editor_property("bone_to_pin_to", bone_from)
+    return pbd
+
 
 def auto_ikr_to_rtg(ikr_source, ikr_target, rotator_source, rotator_target, fpathext="Retargets"):
     """
@@ -171,7 +177,7 @@ def auto_ikr_to_rtg(ikr_source, ikr_target, rotator_source, rotator_target, fpat
     rtg_asset_controller.set_rotation_offset_for_retarget_pose_bone("Hips", rotator_source.quaternion(), unreal.RetargetSourceOrTarget.SOURCE)
     rtg_asset_controller.set_rotation_offset_for_retarget_pose_bone("root", rotator_target.quaternion(), unreal.RetargetSourceOrTarget.TARGET)
 
-    # TODO: Auto Align Bones
+    # Auto Align Bones
     console_log(message="Auto Aligning Bones to Target", indexer=log_indexer)
 
     rtg_asset_controller.auto_align_all_bones(unreal.RetargetSourceOrTarget.TARGET)
@@ -186,6 +192,61 @@ def auto_ikr_to_rtg(ikr_source, ikr_target, rotator_source, rotator_target, fpat
 
     # Spine to Head Group
     #rtg_asset_controller.auto_align_bones(["Spine", "Spine1", "Neck", "Head"], unreal.RetargetAutoAlignMethod.CHAIN_TO_CHAIN, unreal.RetargetSourceOrTarget.SOURCE)
+
+    # Add Retarget Op: Root Motion Generator
+    console_log(message="Adding Retarget Operation: Root Motion", indexer=log_indexer)
+    rmg_op_index = rtg_asset_controller.add_retarget_op(
+        unreal.RootMotionGeneratorOp
+    )
+    rtg_rmg_op = rtg_asset_controller.get_retarget_op_at_index(rmg_op_index)
+    
+    rtg_rmg_op.set_editor_property("source_root_bone", "Hips")
+    rtg_rmg_op.set_editor_property("target_root_bone", "root")
+    rtg_rmg_op.set_editor_property("target_pelvis_bone", "pelvis")
+
+    rtg_rmg_op.set_editor_property(
+        "root_motion_source",
+        unreal.RootMotionSource.GENERATE_FROM_TARGET_PELVIS
+    )
+
+    rtg_rmg_op.set_editor_property(
+        "root_height_source",
+        unreal.RootMotionHeightSource.SNAP_TO_GROUND
+    )
+
+    rtg_rmg_op.set_editor_property("rotate_with_pelvis", True)
+
+    # Add Retarget Op: Pin Bones
+    console_log(message="Adding Retarget Operation: Pin Bones", indexer=log_indexer)
+    rtg_pb_index = rtg_asset_controller.add_retarget_op(
+        unreal.PinBoneOp
+    )
+    rtg_pb_op = rtg_asset_controller.get_retarget_op_at_index(rtg_pb_index)
+
+    rtg_pb_op.set_editor_property(
+        "bones_to_pin",
+        [
+            create_pin_bone_item("ik_foot_root", "root"),
+            create_pin_bone_item("ik_foot_l", "foot_l"),
+            create_pin_bone_item("ik_foot_r", "foot_r"),
+            create_pin_bone_item("ik_hand_root", "root"),
+            create_pin_bone_item("ik_hand_gun", "hand_r"),
+            create_pin_bone_item("ik_hand_l", "hand_l"),
+            create_pin_bone_item("ik_hand_r", "hand_r"),
+        ]
+    )
+
+    rtg_pb_op.set_editor_property(
+        "pin_to",
+        unreal.RetargetSourceOrTarget.TARGET
+    )
+
+    rtg_pb_op.set_editor_property(
+        "pin_type",
+        unreal.PinBoneType.FULL_TRANSFORM
+    )
+
+    rtg_pb_op.set_editor_property("maintain_offset", False)
 
     console_log(message="Finished Successfully", indexer=log_indexer)
     unreal.EditorAssetLibrary.save_asset(rtg.get_path_name())
